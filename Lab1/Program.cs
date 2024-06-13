@@ -1,10 +1,50 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-class Program
+﻿class Program
 {
     static void Main()
     {
-        Console.WriteLine("Test passed");
+        // Ініціалізуємо перелік товарів
+        var smartphones = new List<Item>
+        {
+            new Smartphone(price: 100, quantity: 10),
+            new Smartphone(price: 200, quantity: 10),
+            new Smartphone(price: 300, quantity: 10)
+        };
+        
+        // Відображаємо ціни у зручному форматі
+        DisplayPrices(smartphones);
+
+        // Ініціалізація Customer конструктором
+        var customer = new Customer(name: "John", availableFunds: 700);
+        
+        // Ініціалізація Cart конструктором
+        var cart = new Cart(smartphones, Delivery.SelfPickUp);
+
+        // Перевірка чи всі товари з кошику доступні для оплати криптою
+        if (cart.IsEverythingCryptoSellable())
+        {
+            // Виконання купівлі
+            Purchase(cart, customer, smartphones);
+        }
+    }
+
+    private static void DisplayPrices(List<Item> items)
+    {
+        Console.WriteLine("Prices:");
+        foreach (var item in items)
+        {
+            Console.WriteLine(item.GetDisplayPriceInDollars());
+        }
+    }
+
+    private static void Purchase(Cart cart, Customer customer, List<Item> items)
+    {
+        var totalPrice = cart.CalculateTotalPrice();
+        customer.ChargeMoney(totalPrice);   
+        foreach (var smartphone in items)
+        {
+            smartphone.RemoveFromStock(1);
+        }
+        Console.WriteLine("Purchase succeeded!");
     }
 }
 
@@ -54,7 +94,7 @@ class Customer
         _availableFunds = availableFunds;
     }
 
-    public void chargeMoney(long price)
+    public void ChargeMoney(long price)
     {
         if (IsEnoughFunds(price))
         {
@@ -66,7 +106,7 @@ class Customer
         }
     }
 
-    public void DeductFunds(long price)
+    private void DeductFunds(long price)
     {
         _availableFunds -= price;
     }
@@ -79,6 +119,55 @@ class Customer
     private void NullifyBalance()
     {
         _availableFunds = 0;
+    }
+}
+
+enum Delivery
+{
+    SelfPickUp,
+    Shipment
+}
+
+class Cart
+{
+    public List<Item> Items;
+    public Delivery Delivery;
+
+    public Cart(List<Item> items, Delivery delivery)
+    {
+        Items = items;
+        Delivery = delivery;
+    }
+
+    public void AddItem(Item item)
+    {
+        Items.Add(item);
+    }
+
+    public long CalculateTotalPrice()
+    {
+        var totalPrice = 0L;
+        foreach (var item in Items)
+        {
+            totalPrice += item.Price;
+        }
+        
+        return totalPrice;
+    }
+
+    public bool IsEverythingCryptoSellable()
+    {
+        var isCryptoAccepted = true;
+        foreach (var item in Items)
+        {
+            if (!item.IsBitcoinAccepted())
+            {
+                isCryptoAccepted = false;
+                break;
+            }
+        }
+
+        return isCryptoAccepted;
     }
 }
 
